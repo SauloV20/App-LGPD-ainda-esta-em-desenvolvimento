@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block body %}
+
+<div class="app-wrapper">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <a href="{{ url_for('main.dashboard') }}" class="logo-mark">
+        <div class="logo-icon">🛡️</div>
+        <div>
+          <div class="logo-text">ShieldScan</div>
+          <span class="logo-sub">LGPD Scanner</span>
+        </div>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-label">Principal</span>
+      <a href="{{ url_for('main.dashboard') }}"
+         class="nav-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+        <span class="nav-icon">◈</span> Dashboard
+      </a>
+      <a href="{{ url_for('main.scan') }}"
+         class="nav-item {% if request.endpoint == 'main.scan' %}active{% endif %}">
+        <span class="nav-icon">⬡</span> Novo Scan
+      </a>
+
+      <span class="nav-label">Dados</span>
+      <a href="{{ url_for('main.history') }}"
+         class="nav-item {% if request.endpoint == 'main.history' %}active{% endif %}">
+        <span class="nav-icon">≡</span> Histórico
+      </a>
+
+      <span class="nav-label">Conta</span>
+      <a href="{{ url_for('main.profile') }}"
+         class="nav-item {% if request.endpoint == 'main.profile' %}active{% endif %}">
+        <span class="nav-icon">◎</span> Perfil & API
+      </a>
+      <a href="{{ url_for('auth.change_password') }}"
+         class="nav-item {% if request.endpoint == 'auth.change_password' %}active{% endif %}">
+        <span class="nav-icon">🔑</span> Alterar Senha
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">{{ session.username[0].upper() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ session.username }}</div>
+          <div class="user-plan">{{ session.get('plan', 'free') }}</div>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Sair">⏏</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">
+              {% if category == 'success' %}✓{% elif category == 'error' %}✕{% else %}ℹ{% endif %}
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% endblock %}

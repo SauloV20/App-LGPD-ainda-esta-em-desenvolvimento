@@ -1,0 +1,54 @@
+{% extends "app_base.html" %}
+{% block title %}Texto Anonimizado{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Texto Anonimizado</h1>
+    <p class="page-subtitle">// {{ scan.filename }}</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <button onclick="copyText()" class="btn btn-ghost">⎘ Copiar</button>
+    <a href="{{ url_for('main.scan_detail', scan_id=scan.id) }}" class="btn btn-ghost">← Voltar</a>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <div class="card card-sm mb-6" style="background:var(--accent-dim);border-color:rgba(0,255,136,0.2);display:flex;gap:14px;">
+    <span style="font-size:1.1rem;">🔒</span>
+    <p style="font-size:0.82rem;color:var(--muted);margin:0;line-height:1.7;">
+      Os dados pessoais identificados foram substituídos por marcadores como
+      <code style="background:rgba(0,255,136,0.15);color:var(--accent);padding:1px 6px;border-radius:3px;">[CPF REMOVIDO]</code>.
+      O texto abaixo pode ser usado com segurança para fins que não exijam os dados originais.
+    </p>
+  </div>
+
+  {% if details %}
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
+    {% for item in details %}
+    <span class="badge {% if item.risk == 'crítico' %}badge-critico{% elif item.risk == 'alto' %}badge-alto{% elif item.risk == 'médio' %}badge-medio{% else %}badge-baixo{% endif %}">
+      {{ item.type }} ({{ item.count }})
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div id="anonText" class="anon-text">{{ scan.anonymized_text | replace('[', '<mark>[') | replace(']', ']</mark>') }}</div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyText() {
+  const text = document.getElementById('anonText').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('[onclick="copyText()"]');
+    btn.textContent = '✓ Copiado!';
+    btn.style.color = 'var(--accent)';
+    setTimeout(() => { btn.textContent = '⎘ Copiar'; btn.style.color = ''; }, 2000);
+  });
+}
+</script>
+{% endblock %}

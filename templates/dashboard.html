@@ -1,0 +1,157 @@
+{% extends "app_base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">// bem-vindo, {{ session.username }}</p>
+  </div>
+  <a href="{{ url_for('main.scan') }}" class="btn btn-primary">⬡ Novo Scan</a>
+</div>
+
+<div class="page-body">
+
+  <!-- Rate limit bar -->
+  {% set pct = ((used / limit) * 100) | round | int if limit > 0 else 0 %}
+  <div class="quota-bar">
+    <span class="quota-label">SCANS / MÊS</span>
+    <div class="quota-track">
+      <div class="quota-fill {% if pct >= 90 %}danger{% elif pct >= 70 %}warn{% endif %}"
+           style="width: {{ pct }}%"></div>
+    </div>
+    <span class="quota-count">{{ used }} / {{ limit }}</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total de Scans</div>
+      <div class="stat-value">{{ stats.total_scans }}</div>
+      <div class="stat-desc">histórico completo</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dados Encontrados</div>
+      <div class="stat-value">{{ stats.total_matches }}</div>
+      <div class="stat-desc">ocorrências totais</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Alto Risco</div>
+      <div class="stat-value" style="color:var(--orange)">{{ stats.high_risk_scans }}</div>
+      <div class="stat-desc">scans nível alto ou crítico</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Críticos</div>
+      <div class="stat-value" style="color:var(--red)">{{ stats.critical_scans }}</div>
+      <div class="stat-desc">requerem atenção imediata</div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:32px;">
+    <div class="card">
+      <div class="section-header" style="margin-bottom:16px">
+        <h3 class="section-title">Atividade recente</h3>
+        <span class="text-xs text-mono text-muted">últimos 7 scans</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="activityChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-header" style="margin-bottom:16px">
+        <h3 class="section-title">Tipos mais encontrados</h3>
+      </div>
+      {% if type_freq %}
+        {% for t in type_freq %}
+        <div style="margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="font-size:0.8rem; font-weight:700; color:var(--text)">{{ t.data_type }}</span>
+            <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent)">{{ t.cnt }}</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar" style="width:{{ ((t.cnt / type_freq[0].cnt) * 100) | int }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Nenhum dado encontrado ainda.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent scans -->
+  <div class="section-header">
+    <h2 class="section-title">Scans Recentes</h2>
+    <a href="{{ url_for('main.history') }}" class="btn btn-ghost btn-sm">Ver todos →</a>
+  </div>
+
+  {% if scans %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th><th>Fonte</th><th>Ocorrências</th><th>Risco</th><th>Data</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in scans %}
+          <tr>
+            <td><a href="{{ url_for('main.scan_detail', scan_id=s.id) }}"
+                   style="color:var(--text);text-decoration:none;font-weight:700;">{{ s.filename }}</a></td>
+            <td><span class="source-tag">{{ s.source_type }}</span></td>
+            <td class="text-mono">{{ s.total_matches }}</td>
+            <td>
+              {% set risk = s.risk_level %}
+              {% if risk == 'baixo' %}<span class="badge badge-baixo">🟢 Baixo</span>
+              {% elif risk == 'médio' %}<span class="badge badge-medio">🟡 Médio</span>
+              {% elif risk == 'alto' %}<span class="badge badge-alto">🟠 Alto</span>
+              {% elif risk == 'crítico' %}<span class="badge badge-critico">🔴 Crítico</span>
+              {% else %}<span class="badge" style="color:var(--muted)">— Nenhum</span>{% endif %}
+            </td>
+            <td class="text-mono text-xs text-muted">{{ s.created_at[:16] }}</td>
+            <td><a href="{{ url_for('main.scan_detail', scan_id=s.id) }}" class="btn btn-ghost btn-sm">Ver</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state card">
+      <span class="empty-icon">⬡</span>
+      <div class="empty-title">Nenhum scan ainda</div>
+      <p class="empty-desc">Comece escaneando um texto ou enviando um arquivo.</p>
+      <a href="{{ url_for('main.scan') }}" class="btn btn-primary mt-4">Fazer primeiro scan</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const chartScans = {{ chart_scans | tojson }};
+if (chartScans.length > 0) {
+  const riskMap = {'nenhum':'#00ff88','baixo':'#00ff88','médio':'#ffd166','alto':'#ff8c42','crítico':'#ff4455'};
+  const labels  = chartScans.map(s => s.created_at.slice(5,16));
+  const data    = chartScans.map(s => s.total_matches);
+  const bg      = chartScans.map(s => (riskMap[s.risk_level]||'#00ff88')+'44');
+  const border  = chartScans.map(s => riskMap[s.risk_level]||'#00ff88');
+  new Chart(document.getElementById('activityChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: bg, borderColor: border, borderWidth:1.5, borderRadius:4 }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { display:false } },
+      scales: {
+        x: { ticks:{color:'#5a6475',font:{family:'Space Mono',size:9}}, grid:{color:'#222830'} },
+        y: { ticks:{color:'#5a6475',font:{family:'Space Mono',size:9}}, grid:{color:'#222830'}, beginAtZero:true }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

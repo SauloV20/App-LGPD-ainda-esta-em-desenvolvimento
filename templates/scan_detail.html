@@ -1,0 +1,122 @@
+{% extends "app_base.html" %}
+{% block title %}Resultado — {{ scan.filename }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ scan.filename }}</h1>
+    <p class="page-subtitle">// {{ scan.created_at[:16] }} &nbsp;·&nbsp; {{ scan.source_type }}</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{{ url_for('main.export_pdf', scan_id=scan.id) }}" class="btn btn-ghost">
+      ↓ Exportar PDF
+    </a>
+    {% if scan.anonymized_text %}
+    <a href="{{ url_for('main.view_anonymized', scan_id=scan.id) }}" class="btn btn-ghost">
+      🔒 Ver anonimizado
+    </a>
+    {% endif %}
+    <a href="{{ url_for('main.scan') }}" class="btn btn-ghost">⬡ Novo scan</a>
+    <form method="post" action="{{ url_for('main.delete_scan', scan_id=scan.id) }}"
+          onsubmit="return confirm('Excluir este scan permanentemente?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger btn-sm">✕ Excluir</button>
+    </form>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <!-- Risk strip -->
+  {% set risk = scan.risk_level %}
+  <div class="risk-strip {{ risk | replace('é','e') | replace('í','i') }}">
+    <div class="risk-icon">
+      {% if risk == 'baixo' %}🟢{% elif risk == 'médio' %}🟡{% elif risk == 'alto' %}🟠{% elif risk == 'crítico' %}🔴{% else %}✅{% endif %}
+    </div>
+    <div>
+      <div class="risk-label" style="
+        {% if risk == 'crítico' %}color:var(--red)
+        {% elif risk == 'alto' %}color:var(--orange)
+        {% elif risk == 'médio' %}color:var(--yellow)
+        {% else %}color:var(--accent){% endif %}">
+        Risco {{ risk | capitalize if risk != 'nenhum' else 'Nenhum' }}
+      </div>
+      <div class="risk-desc">
+        {% if risk == 'nenhum' %}Nenhum dado pessoal identificado.
+        {% elif risk == 'baixo' %}Dados de baixa sensibilidade encontrados.
+        {% elif risk == 'médio' %}Dados pessoais como e-mail e telefone detectados.
+        {% elif risk == 'alto' %}Dados sensíveis como CPF ou RG identificados.
+        {% else %}Dados financeiros críticos — atenção imediata recomendada.{% endif %}
+      </div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div class="stat-value" style="font-size:2rem;">{{ scan.total_matches }}</div>
+      <div class="stat-desc">ocorrência{{ 's' if scan.total_matches != 1 }}</div>
+    </div>
+  </div>
+
+  {% if not details %}
+    <div class="empty-state card">
+      <span class="empty-icon">✓</span>
+      <div class="empty-title">Nenhum dado sensível encontrado</div>
+      <p class="empty-desc">O conteúdo analisado não contém padrões de dados pessoais identificáveis pela LGPD.</p>
+    </div>
+  {% else %}
+
+    <div class="section-header">
+      <h2 class="section-title">Dados identificados</h2>
+      <span class="text-muted text-xs text-mono">{{ details | length }} tipo(s)</span>
+    </div>
+
+    <div class="result-grid">
+      {% for item in details %}
+      <div class="result-card">
+        <div class="result-header">
+          <div>
+            <div class="result-type">{{ item.type }}</div>
+            <div class="result-count">{{ item.count }} ocorrência{{ 's' if item.count != 1 }}</div>
+          </div>
+          {% set r = item.risk %}
+          {% if r == 'baixo' %}<span class="badge badge-baixo">Baixo</span>
+          {% elif r == 'médio' %}<span class="badge badge-medio">Médio</span>
+          {% elif r == 'alto' %}<span class="badge badge-alto">Alto</span>
+          {% else %}<span class="badge badge-critico">Crítico</span>{% endif %}
+        </div>
+        <div class="match-list">
+          {% for m in item.matches %}
+            <span class="match-item">{{ m }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Summary table -->
+    <div class="divider"></div>
+    <h3 class="section-title mb-4">Resumo por tipo</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tipo de dado</th><th>Ocorrências</th><th>Nível de risco</th></tr>
+        </thead>
+        <tbody>
+          {% for item in details %}
+          {% set r = item.risk %}
+          <tr>
+            <td class="fw-700">{{ item.type }}</td>
+            <td class="text-mono">{{ item.count }}</td>
+            <td>
+              {% if r == 'baixo' %}<span class="badge badge-baixo">🟢 Baixo</span>
+              {% elif r == 'médio' %}<span class="badge badge-medio">🟡 Médio</span>
+              {% elif r == 'alto' %}<span class="badge badge-alto">🟠 Alto</span>
+              {% else %}<span class="badge badge-critico">🔴 Crítico</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

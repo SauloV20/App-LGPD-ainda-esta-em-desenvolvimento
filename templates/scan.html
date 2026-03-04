@@ -1,0 +1,162 @@
+{% extends "app_base.html" %}
+{% block title %}Novo Scan{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Novo Scan</h1>
+    <p class="page-subtitle">// análise de dados pessoais LGPD</p>
+  </div>
+</div>
+
+<div class="page-body">
+  <div style="max-width:820px;">
+
+    <!-- Quota bar -->
+    {% set pct = ((used / limit) * 100) | round | int if limit > 0 else 0 %}
+    <div class="quota-bar" style="margin-bottom:24px;">
+      <span class="quota-label">SCANS / MÊS</span>
+      <div class="quota-track">
+        <div class="quota-fill {% if pct >= 90 %}danger{% elif pct >= 70 %}warn{% endif %}"
+             style="width:{{ pct }}%"></div>
+      </div>
+      <span class="quota-count">{{ used }} / {{ limit }}</span>
+    </div>
+
+    {% if used >= limit %}
+    <div class="flash error" style="margin-bottom:20px;">
+      ✕ Limite mensal atingido. Faça upgrade do plano para continuar.
+    </div>
+    {% else %}
+
+    <!-- Info bar -->
+    <div class="card card-sm mb-6" style="background:var(--accent-dim);border-color:rgba(0,255,136,0.2);display:flex;gap:14px;align-items:flex-start;">
+      <span style="font-size:1.1rem;margin-top:2px;">ℹ️</span>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.7;margin:0;">
+        Detecta: <strong style="color:var(--text)">CPF</strong>, <strong style="color:var(--text)">CNPJ</strong>,
+        RG, E-mail, Telefone, Data de Nascimento, CEP,
+        <strong style="color:var(--red)">Cartão de Crédito</strong>, IP, Passaporte,
+        Título de Eleitor, PIS/PASEP e <strong style="color:var(--red)">Chave Pix</strong>.
+        CPF e CNPJ são validados por dígitos verificadores.
+      </p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('text', this)">✏️ Texto</button>
+      <button class="tab-btn" onclick="switchTab('file', this)">📁 Arquivo (.txt, .pdf, .docx)</button>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="scanForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="filename">Nome do documento (opcional)</label>
+        <input id="filename" name="filename" type="text"
+               placeholder="ex: Contrato de Prestação de Serviços" maxlength="100">
+      </div>
+
+      <!-- Tab: Text -->
+      <div id="tab-text" class="tab-panel active">
+        <div class="form-group">
+          <label for="text">Texto para análise</label>
+          <textarea id="text" name="text" maxlength="100000"
+                    placeholder="Cole aqui o texto que deseja analisar em busca de dados pessoais..."></textarea>
+          <div class="char-counter" id="charCounter">0 / 100.000</div>
+        </div>
+      </div>
+
+      <!-- Tab: File -->
+      <div id="tab-file" class="tab-panel">
+        <div class="form-group">
+          <label>Arquivo</label>
+          <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+            <span class="dropzone-icon">📄</span>
+            <div class="dropzone-title" id="dropzoneTitle">Clique ou arraste o arquivo aqui</div>
+            <div class="dropzone-sub">Suporta .txt, .pdf e .docx — máximo 10MB</div>
+          </div>
+          <input type="file" id="fileInput" name="file" accept=".txt,.pdf,.docx"
+                 style="display:none" onchange="handleFileSelect(this)">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center;">
+        <button type="submit" class="btn btn-primary" id="submitBtn">⬡ Escanear</button>
+        <button type="button" class="btn btn-ghost" onclick="resetForm()">Limpar</button>
+        <span id="loadingMsg" style="display:none;font-size:0.8rem;color:var(--muted);">Analisando...</span>
+      </div>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let activeTab = 'text';
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  activeTab = tab;
+  // Clear required on inactive tab
+  document.getElementById('text').required = (tab === 'text');
+}
+
+// Char counter
+const textarea = document.getElementById('text');
+const counter  = document.getElementById('charCounter');
+if (textarea) {
+  textarea.addEventListener('input', () => {
+    const len = textarea.value.length;
+    counter.textContent = `${len.toLocaleString('pt-BR')} / 100.000`;
+    counter.className = 'char-counter' + (len > 90000 ? ' danger' : len > 70000 ? ' warn' : '');
+  });
+}
+
+// File drop
+const dropzone = document.getElementById('dropzone');
+if (dropzone) {
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) setFile(file);
+  });
+}
+
+function handleFileSelect(input) {
+  if (input.files[0]) setFile(input.files[0]);
+}
+
+function setFile(file) {
+  document.getElementById('fileInput').files = (function() {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    return dt.files;
+  })();
+  document.getElementById('dropzoneTitle').textContent = `✓  ${file.name}`;
+  dropzone.style.borderColor = 'var(--accent)';
+}
+
+function resetForm() {
+  document.getElementById('scanForm').reset();
+  if (counter) counter.textContent = '0 / 100.000';
+  if (dropzone) {
+    document.getElementById('dropzoneTitle').textContent = 'Clique ou arraste o arquivo aqui';
+    dropzone.style.borderColor = '';
+  }
+}
+
+document.getElementById('scanForm') && document.getElementById('scanForm').addEventListener('submit', () => {
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = 'Analisando...';
+  document.getElementById('loadingMsg').style.display = 'inline';
+});
+</script>
+{% endblock %}

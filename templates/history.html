@@ -1,0 +1,99 @@
+{% extends "app_base.html" %}
+{% block title %}Histórico{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Histórico</h1>
+    <p class="page-subtitle">// {{ total }} scan{{ 's' if total != 1 }} encontrado{{ 's' if total != 1 }}</p>
+  </div>
+  <a href="{{ url_for('main.scan') }}" class="btn btn-primary">⬡ Novo Scan</a>
+</div>
+
+<div class="page-body">
+
+  <!-- Search & filter -->
+  <form method="get" class="search-bar">
+    <input name="q" type="text" placeholder="Buscar por nome..." value="{{ q }}">
+    <select name="risk">
+      <option value="">Todos os riscos</option>
+      {% for r in ['nenhum','baixo','médio','alto','crítico'] %}
+      <option value="{{ r }}" {% if risk_filter == r %}selected{% endif %}>
+        {{ r | capitalize }}
+      </option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+    {% if q or risk_filter %}
+    <a href="{{ url_for('main.history') }}" class="btn btn-ghost">✕ Limpar</a>
+    {% endif %}
+  </form>
+
+  {% if scans %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Nome</th><th>Fonte</th>
+            <th>Ocorrências</th><th>Risco</th><th>Data</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in scans %}
+          {% set risk = s.risk_level %}
+          <tr>
+            <td class="text-mono text-muted text-xs">{{ s.id }}</td>
+            <td>
+              <a href="{{ url_for('main.scan_detail', scan_id=s.id) }}"
+                 style="color:var(--text);text-decoration:none;font-weight:700;">{{ s.filename }}</a>
+            </td>
+            <td><span class="source-tag">{{ s.source_type }}</span></td>
+            <td class="text-mono">{{ s.total_matches }}</td>
+            <td>
+              {% if risk == 'baixo' %}<span class="badge badge-baixo">🟢 Baixo</span>
+              {% elif risk == 'médio' %}<span class="badge badge-medio">🟡 Médio</span>
+              {% elif risk == 'alto' %}<span class="badge badge-alto">🟠 Alto</span>
+              {% elif risk == 'crítico' %}<span class="badge badge-critico">🔴 Crítico</span>
+              {% else %}<span class="badge" style="color:var(--muted)">— Nenhum</span>{% endif %}
+            </td>
+            <td class="text-mono text-xs text-muted">{{ s.created_at[:16] }}</td>
+            <td><a href="{{ url_for('main.scan_detail', scan_id=s.id) }}" class="btn btn-ghost btn-sm">Ver →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+      <a href="?page={{ page - 1 }}&q={{ q }}&risk={{ risk_filter }}"
+         class="page-btn {% if page <= 1 %}disabled{% endif %}">← Anterior</a>
+      {% for p in range(1, total_pages + 1) %}
+        {% if p <= 3 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+          <a href="?page={{ p }}&q={{ q }}&risk={{ risk_filter }}"
+             class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+        {% elif p == 4 or p == total_pages - 2 %}
+          <span class="page-btn" style="pointer-events:none">…</span>
+        {% endif %}
+      {% endfor %}
+      <a href="?page={{ page + 1 }}&q={{ q }}&risk={{ risk_filter }}"
+         class="page-btn {% if page >= total_pages %}disabled{% endif %}">Próxima →</a>
+    </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty-state card">
+      <span class="empty-icon">≡</span>
+      <div class="empty-title">Nenhum scan encontrado</div>
+      <p class="empty-desc">
+        {% if q or risk_filter %}Tente outros filtros.{% else %}Seu histórico aparecerá aqui.{% endif %}
+      </p>
+      {% if not q and not risk_filter %}
+      <a href="{{ url_for('main.scan') }}" class="btn btn-primary mt-4">Fazer primeiro scan</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

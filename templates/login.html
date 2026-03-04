@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block body %}
+<div class="auth-wrapper">
+  <div class="auth-box">
+
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🛡️</div>
+      <div>
+        <div class="auth-logo-text">ShieldScan</div>
+        <div class="auth-logo-sub">LGPD Scanner</div>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}" style="margin-bottom:16px">
+            {% if category == 'success' %}✓{% elif category == 'error' %}✕{% else %}ℹ{% endif %}
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <h1 class="auth-title">Acessar conta</h1>
+    <p class="auth-sub">Use seu usuário ou e-mail para entrar.</p>
+
+    <form method="post" autocomplete="on">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-group">
+        <label for="identifier">Usuário ou E-mail</label>
+        <input id="identifier" name="identifier" type="text"
+               placeholder="seu_usuario ou email@exemplo.com"
+               autocomplete="username" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input id="password" name="password" type="password"
+               placeholder="••••••••"
+               autocomplete="current-password" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" style="justify-content:center; padding:13px 20px;">
+        Entrar →
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Não tem conta? <a href="{{ url_for('auth.register') }}">Criar conta grátis</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

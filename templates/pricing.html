@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Planos e Preços{% endblock %}
+
+{% block body %}
+<div style="min-height:100vh; background:var(--bg); padding: 60px 20px;">
+
+  <!-- Nav -->
+  <nav style="display:flex; justify-content:space-between; align-items:center; max-width:1100px; margin:0 auto 60px;">
+    <a href="{{ url_for('main.landing') }}" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+      <div style="width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🛡️</div>
+      <span style="font-weight:800;font-size:1.1rem;color:var(--text);">ShieldScan</span>
+    </a>
+    <div style="display:flex;gap:12px;">
+      {% if user %}
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-ghost btn-sm">Dashboard</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Login</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Começar grátis</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <div style="text-align:center; max-width:600px; margin:0 auto 60px;">
+    <div style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">Planos e Preços</div>
+    <h1 style="font-size:2.8rem;font-weight:800;color:var(--text);letter-spacing:-.03em;line-height:1.1;margin-bottom:16px;">
+      Proteção de dados<br>para todos os tamanhos
+    </h1>
+    <p style="color:var(--muted);font-size:1rem;line-height:1.7;">
+      Comece gratuitamente e faça upgrade conforme cresce. Sem taxas escondidas.
+    </p>
+  </div>
+
+  <!-- Plans grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:950px;margin:0 auto 60px;">
+
+    <!-- Free -->
+    <div class="card" style="display:flex;flex-direction:column;">
+      <div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">FREE</div>
+      <div style="font-size:2.5rem;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;">R$ 0</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:24px;">para sempre</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px;flex:1;">
+        {% for item in ["20 scans por mês","Detecção de 13 tipos de dados","Anonimização automática","Histórico de scans"] %}
+        <li style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:var(--muted);">
+          <span style="color:var(--accent);font-size:1rem;">✓</span> {{ item }}
+        </li>
+        {% endfor %}
+        {% for item in ["Upload de arquivos","Exportar PDF","API REST"] %}
+        <li style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:var(--muted);opacity:.4;">
+          <span style="font-size:1rem;">✕</span> {{ item }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% if user and user.plan == 'free' %}
+        <div class="btn btn-ghost w-full" style="text-align:center;cursor:default;">Plano atual</div>
+      {% else %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-ghost w-full" style="text-align:center;">Começar grátis</a>
+      {% endif %}
+    </div>
+
+    <!-- Pro (highlighted) -->
+    <div style="background:var(--bg2);border:2px solid var(--accent);border-radius:12px;padding:24px;display:flex;flex-direction:column;position:relative;">
+      <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--bg);font-family:var(--font-mono);font-size:0.65rem;font-weight:700;letter-spacing:.1em;padding:4px 14px;border-radius:20px;">MAIS POPULAR</div>
+      <div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;">PRO</div>
+      <div style="font-size:2.5rem;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;">R$ 49</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:24px;">por mês</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px;flex:1;">
+        {% for item in ["500 scans por mês","Tudo do Free","Upload .txt, .pdf, .docx","Exportar relatório em PDF","API REST completa","Suporte por e-mail"] %}
+        <li style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:var(--muted);">
+          <span style="color:var(--accent);font-size:1rem;">✓</span> {{ item }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% if user %}
+        {% if user.plan == 'pro' %}
+          <div class="btn w-full" style="text-align:center;cursor:default;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">Plano atual</div>
+        {% else %}
+          <a href="{{ url_for('payments.checkout', plan='pro') }}" class="btn btn-primary w-full" style="text-align:center;">Assinar Pro →</a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary w-full" style="text-align:center;">Começar com Pro →</a>
+      {% endif %}
+    </div>
+
+    <!-- Enterprise -->
+    <div class="card" style="display:flex;flex-direction:column;">
+      <div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">ENTERPRISE</div>
+      <div style="font-size:2.5rem;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;">R$ 199</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:24px;">por mês</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px;flex:1;">
+        {% for item in ["Scans ilimitados","Tudo do Pro","Múltiplos usuários","SLA de suporte","Relatórios personalizados","Integração via webhook","Onboarding dedicado"] %}
+        <li style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:var(--muted);">
+          <span style="color:var(--accent);font-size:1rem;">✓</span> {{ item }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% if user %}
+        {% if user.plan == 'enterprise' %}
+          <div class="btn btn-ghost w-full" style="text-align:center;cursor:default;">Plano atual</div>
+        {% else %}
+          <a href="{{ url_for('payments.checkout', plan='enterprise') }}" class="btn btn-ghost w-full" style="text-align:center;">Assinar Enterprise →</a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-ghost w-full" style="text-align:center;">Falar com vendas</a>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- FAQ -->
+  <div style="max-width:640px;margin:0 auto;">
+    <h2 style="text-align:center;font-size:1.4rem;font-weight:800;color:var(--text);margin-bottom:32px;">Perguntas frequentes</h2>
+    {% set faqs = [
+      ("Posso cancelar quando quiser?", "Sim. Ao cancelar, você mantém acesso até o fim do período já pago. Sem multas."),
+      ("O pagamento é seguro?", "Sim. Todo o processamento é feito pelo Stripe, padrão global de segurança PCI-DSS."),
+      ("Meus dados ficam armazenados?", "O texto dos scans fica salvo no seu histórico. Você pode excluir qualquer scan quando quiser."),
+      ("Como funciona a API?", "Gere um token em Perfil → API Tokens e use no header X-API-Token nas requisições POST /api/v1/scan."),
+    ] %}
+    {% for q, a in faqs %}
+    <div style="border-bottom:1px solid var(--border);padding:20px 0;">
+      <div style="font-weight:700;color:var(--text);margin-bottom:8px;">{{ q }}</div>
+      <div style="font-size:0.875rem;color:var(--muted);line-height:1.7;">{{ a }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% endblock %}

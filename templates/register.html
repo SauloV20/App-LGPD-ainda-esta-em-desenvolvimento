@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Criar Conta{% endblock %}
+
+{% block body %}
+<div class="auth-wrapper">
+  <div class="auth-box">
+
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🛡️</div>
+      <div>
+        <div class="auth-logo-text">ShieldScan</div>
+        <div class="auth-logo-sub">LGPD Scanner</div>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}" style="margin-bottom:16px">
+            {% if category == 'success' %}✓{% elif category == 'error' %}✕{% else %}ℹ{% endif %}
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <h1 class="auth-title">Criar conta</h1>
+    <p class="auth-sub">Comece a identificar dados pessoais nos seus documentos.</p>
+
+    <form method="post" autocomplete="on">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-group">
+        <label for="username">Usuário</label>
+        <input id="username" name="username" type="text"
+               placeholder="meu_usuario"
+               value="{{ username or '' }}"
+               autocomplete="username" required autofocus minlength="3">
+        <p class="form-hint">Mínimo 3 caracteres. Sem espaços.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email"
+               placeholder="email@empresa.com"
+               value="{{ email or '' }}"
+               autocomplete="email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input id="password" name="password" type="password"
+               placeholder="••••••••"
+               autocomplete="new-password" required minlength="6">
+        <p class="form-hint">Mínimo 6 caracteres.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm">Confirmar senha</label>
+        <input id="confirm" name="confirm" type="password"
+               placeholder="••••••••"
+               autocomplete="new-password" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" style="justify-content:center; padding:13px 20px;">
+        Criar conta →
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Já tem conta? <a href="{{ url_for('auth.login') }}">Fazer login</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

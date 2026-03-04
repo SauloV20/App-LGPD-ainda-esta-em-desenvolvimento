@@ -1,0 +1,19 @@
+{% extends "app_base.html" %}
+{% block title %}Pagamento Confirmado{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:40px;">
+  <div style="text-align:center;max-width:480px;">
+    <div style="font-size:4rem;margin-bottom:24px;">🎉</div>
+    <h1 style="font-size:2rem;font-weight:800;color:var(--text);margin-bottom:12px;">Pagamento confirmado!</h1>
+    <p style="color:var(--muted);line-height:1.7;margin-bottom:32px;">
+      Sua assinatura foi ativada com sucesso. O plano já está disponível na sua conta.
+      Pode levar alguns segundos para atualizar.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Ir para o Dashboard →</a>
+      <a href="{{ url_for('main.profile') }}" class="btn btn-ghost">Ver meu plano</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
